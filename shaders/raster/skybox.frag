@@ -24,9 +24,9 @@ in vec3 vPosition;
 uniform samplerCube uCubeSky;
 uniform float uSkyIntensity;
 
-layout(location = 0) out vec3 FragColor;
+layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    FragColor = texture(uCubeSky, vPosition).rgb * uSkyIntensity;
+    FragColor = vec4(texture(uCubeSky, vPosition).rgb * uSkyIntensity, 1.0);
 }

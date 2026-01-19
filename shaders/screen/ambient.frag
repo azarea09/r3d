@@ -50,8 +50,8 @@ uniform mat4 uMatInvView;
 
 /* === Fragments === */
 
-layout(location = 0) out vec3 FragDiffuse;
-layout(location = 1) out vec3 FragSpecular;
+layout(location = 0) out vec4 FragDiffuse;
+layout(location = 1) out vec4 FragSpecular;
 
 /* === PBR functions === */
 
@@ -147,8 +147,7 @@ void main()
     vec3 kD = (1.0 - kS) * (1.0 - metalness);
 
     vec3 Nr = RotateWithQuat(N, uQuatSkybox);
-    FragDiffuse = kD * texture(uCubeIrradiance, Nr).rgb;
-    FragDiffuse *= occlusion * uSkyboxAmbientIntensity;
+    FragDiffuse = vec4(kD * texture(uCubeIrradiance, Nr).rgb * occlusion * uSkyboxAmbientIntensity, 1.0);
 
     /* Skybox reflection - IBL specular */
 
@@ -159,7 +158,7 @@ void main()
 
     vec2 brdf = texture(uTexBrdfLut, vec2(cNdotV, roughness)).rg;
     vec3 specularReflection = prefilteredColor * (F0 * brdf.x + brdf.y); // LUT handles fresnel
-    FragSpecular = specularReflection * uSkyboxReflectIntensity;
+    FragSpecular = vec4(specularReflection * uSkyboxReflectIntensity, 1.0);
 }
 
 #else

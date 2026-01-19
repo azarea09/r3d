@@ -33,7 +33,7 @@ uniform sampler2D uTexSpecular;
 
 /* === Fragments === */
 
-layout(location = 0) out vec3 FragColor;
+layout(location = 0) out vec4 FragColor;
 
 /* === Main function === */
 
@@ -49,5 +49,6 @@ void main()
 
     /* Combine all lighting contributions */
 
-    FragColor = (albedo * diffuse) + specular + emission;
+    float alpha = texture(uTexAlbedo, vTexCoord).a;
+    FragColor = vec4((albedo * diffuse) + specular + emission, alpha);
 }

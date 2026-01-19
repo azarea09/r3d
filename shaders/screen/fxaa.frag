@@ -165,7 +165,7 @@ void main()
     
     float range = rangeMax - rangeMin;
     if(range < max(FXAA_EDGE_THRESHOLD_MIN, rangeMax * FXAA_EDGE_THRESHOLD)) {
-        FragColor = vec4(rgbM, 1.0);
+        FragColor = vec4(rgbM, texture(uTexture, pos.xy).a);
         return;
     }
     
@@ -270,5 +270,5 @@ void main()
         pos.x + (horzSpan ? 0.0 : subPixelOffset),
         pos.y + (horzSpan ? subPixelOffset : 0.0))).xyz;
 
-    FragColor = vec4(FxaaLerp3(rgbL, rgbF, blendL), 1.0);
+    FragColor = vec4(FxaaLerp3(rgbL, rgbF, blendL), texture(uTexture, pos.xy).a);
 }

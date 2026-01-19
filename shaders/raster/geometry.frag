@@ -43,7 +43,7 @@ uniform float uMetalness;
 
 /* === Fragments === */
 
-layout(location = 0) out vec3 FragAlbedo;
+layout(location = 0) out vec4 FragAlbedo;
 layout(location = 1) out vec3 FragEmission;
 layout(location = 2) out vec2 FragNormal;
 layout(location = 3) out vec3 FragORM;
@@ -79,7 +79,7 @@ vec2 EncodeOctahedral(vec3 normal)
 
 void main()
 {
-    FragAlbedo = vColor * texture(uTexAlbedo, vTexCoord).rgb;
+    FragAlbedo = vec4(vColor, 1.0) * texture(uTexAlbedo, vTexCoord);
     FragEmission = vEmission * texture(uTexEmission, vTexCoord).rgb;
     FragNormal = EncodeOctahedral(normalize(vTBN * NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale)));
 

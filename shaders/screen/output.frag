@@ -226,11 +226,12 @@ vec3 LinearToSRGB(vec3 color)
 
 void main()
 {
-    vec3 color = texture(uTexColor, vTexCoord).rgb;
+    vec4 texColor = texture(uTexColor, vTexCoord);
+    vec3 color = texColor.rgb;
 
     color = Tonemapping(color, uTonemapExposure, uTonemapWhite);
     color = Adjustments(color, uBrightness, uContrast, uSaturation);
     color = Debanding(color);
 
-    FragColor = vec4(LinearToSRGB(color), 1.0);
+    FragColor = vec4(LinearToSRGB(color), texColor.a);
 }

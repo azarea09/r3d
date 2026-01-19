@@ -85,7 +85,8 @@ float FogFactor(float dist, int mode, float density, float start, float end)
 void main()
 {
     // Sampling scene color texture
-    vec3 result = texture(uTexColor, vTexCoord).rgb;
+    vec4 texColor = texture(uTexColor, vTexCoord);
+    vec3 result = texColor.rgb;
 
     // Depth retrieval and distance calculation
     float depth = texture(uTexDepth, vTexCoord).r;
@@ -96,5 +97,5 @@ void main()
     result = mix(result, uFogColor, fogFactor);
 
     // Final color output
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4(result, texColor.a);
 }

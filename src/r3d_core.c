@@ -104,7 +104,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.container.aLightBatch = r3d_array_create(8, sizeof(r3d_light_batched_t));
 
     // Environment data
-    R3D.env.backgroundColor = (Vector3) { 0.2f, 0.2f, 0.2f };
+    R3D.env.backgroundColor = (Vector4) { 0.2f, 0.2f, 0.2f, 1.0f };
     R3D.env.ambientColor = (Vector3) { 0.2f, 0.2f, 0.2f };
     R3D.env.quatSky = QuaternionIdentity();
     R3D.env.useSky = false;
@@ -1711,7 +1711,7 @@ void r3d_pass_scene_background(void)
                 R3D.env.backgroundColor.x,
                 R3D.env.backgroundColor.y,
                 R3D.env.backgroundColor.z,
-                0.0f
+                R3D.env.backgroundColor.w
             });
         }
     }
