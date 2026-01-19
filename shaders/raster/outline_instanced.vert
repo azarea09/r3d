@@ -13,8 +13,9 @@ layout (location = 1) in vec2 aTexCoord;
 layout (location = 2) in vec3 aNormal;
 layout (location = 3) in vec4 aColor;
 layout (location = 4) in vec4 aTangent;
-layout (location = 5) in vec4 aBoneIds;
+layout (location = 5) in ivec4 aBoneIds;
 layout (location = 6) in vec4 aBoneWeights;
+
 
 // Instance attributes
 layout (location = 7) in mat4 aInstanceTransform;
