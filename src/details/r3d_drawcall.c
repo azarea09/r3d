@@ -604,6 +604,83 @@ void r3d_drawcall_raster_geometry_inst(const r3d_drawcall_t* call)
 
 void r3d_drawcall_raster_forward(const r3d_drawcall_t* call)
 {
+    // Custom shader support
+    if (call->material.shader.id > 0) {
+        rlEnableShader(call->material.shader.id);
+
+        // Compute model/view/projection matrices
+        Matrix matModel = MatrixMultiply(call->transform, rlGetMatrixTransform());
+        Matrix matModelView = MatrixMultiply(matModel, rlGetMatrixModelview());
+        Matrix matMVP = MatrixMultiply(matModelView, rlGetMatrixProjection());
+        Matrix matNormal = MatrixTranspose(MatrixInvert(matModel));
+
+        // Use standard Raylib locations if available
+        int* locs = call->material.shader.locs;
+        if (locs) {
+            if (locs[SHADER_LOC_MATRIX_MVP] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_MVP], matMVP);
+            if (locs[SHADER_LOC_MATRIX_MODEL] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_MODEL], matModel);
+            if (locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_VIEW], R3D.state.transform.view);
+            if (locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_PROJECTION], R3D.state.transform.proj);
+            if (locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_NORMAL], matNormal);
+
+            // Bind Albedo (TextureUnit 0)
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, call->material.albedo.texture.id ? call->material.albedo.texture.id : R3D.texture.white);
+            if (locs[SHADER_LOC_MAP_ALBEDO] != -1) {
+                int slot = 0;
+                rlSetUniform(locs[SHADER_LOC_MAP_ALBEDO], &slot, RL_SHADER_UNIFORM_INT, 1);
+            }
+
+            // Bind Normal (TextureUnit 1)
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, call->material.normal.texture.id ? call->material.normal.texture.id : R3D.texture.normal);
+            if (locs[SHADER_LOC_MAP_NORMAL] != -1) {
+                int slot = 1;
+                rlSetUniform(locs[SHADER_LOC_MAP_NORMAL], &slot, RL_SHADER_UNIFORM_INT, 1);
+            }
+
+            // Bind Emission (TextureUnit 2)
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, call->material.emission.texture.id ? call->material.emission.texture.id : R3D.texture.black);
+            if (locs[SHADER_LOC_MAP_EMISSION] != -1) {
+                int slot = 2;
+                rlSetUniform(locs[SHADER_LOC_MAP_EMISSION], &slot, RL_SHADER_UNIFORM_INT, 1);
+            }
+            
+            // Set Color Diffuse
+            if (locs[SHADER_LOC_COLOR_DIFFUSE] != -1) {
+                Vector4 color = {
+                    (float)call->material.albedo.color.r / 255.0f,
+                    (float)call->material.albedo.color.g / 255.0f,
+                    (float)call->material.albedo.color.b / 255.0f,
+                    (float)call->material.albedo.color.a / 255.0f
+                };
+                rlSetUniform(locs[SHADER_LOC_COLOR_DIFFUSE], &color, RL_SHADER_UNIFORM_VEC4, 1);
+            }
+        }
+
+        // Bone matrices upload for animations
+        if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+            int boneLoc = rlGetLocationUniform(call->material.shader.id, "uBoneMatrices");
+            if (boneLoc != -1) {
+                rlSetUniformMatrices(boneLoc, call->geometry.model.mesh->boneMatrices, call->geometry.model.anim->boneCount);
+            }
+        }
+
+        // Applying material parameters that are independent of shaders
+        r3d_drawcall_apply_cull_mode(call->material.cullMode);
+        r3d_drawcall_apply_blend_mode(call->material.blendMode);
+
+        // Rendering the object corresponding to the draw call
+        r3d_drawcall(call);
+        
+        // Reset state
+        rlDisableShader();
+        glActiveTexture(GL_TEXTURE0);
+        
+        return;
+    }
+
     // Compute model/view/projection matrices
     Matrix matModel = MatrixMultiply(call->transform, rlGetMatrixTransform());
     Matrix matModelView = MatrixMultiply(matModel, rlGetMatrixModelview());
@@ -683,6 +760,74 @@ void r3d_drawcall_raster_forward_inst(const r3d_drawcall_t* call)
     // Compute model/view/projection matrix
     Matrix matModel = MatrixMultiply(call->transform, rlGetMatrixTransform());
     Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
+
+    // Custom shader support
+    if (call->material.shader.id > 0) {
+        rlEnableShader(call->material.shader.id);
+
+        // Use standard Raylib locations if available
+        int* locs = call->material.shader.locs;
+        if (locs) {
+            // Note: Instanced shader usually just needs VP and maybe Model (if not doing full instancing with model matrix per instance)
+            // But r3d sends Model Matrix via Vertex Attribute 10 (or 7 for outline).
+            // So we mainly need VP.
+            if (locs[SHADER_LOC_MATRIX_MVP] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_MVP], matVP); // Usually VP for instancing? Or Identity?
+            // Actually, in instancing, MVP is often calculated in shader: ViewProj * InstanceTransform
+            // Raylib default instanced shader uses `matVP` uniform.
+            
+            if (locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_VIEW], R3D.state.transform.view);
+            if (locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformMatrix(locs[SHADER_LOC_MATRIX_PROJECTION], R3D.state.transform.proj);
+
+             // Bind Albedo (TextureUnit 0)
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, call->material.albedo.texture.id ? call->material.albedo.texture.id : R3D.texture.white);
+            if (locs[SHADER_LOC_MAP_ALBEDO] != -1) {
+                int slot = 0;
+                rlSetUniform(locs[SHADER_LOC_MAP_ALBEDO], &slot, RL_SHADER_UNIFORM_INT, 1);
+            }
+            
+            // Bind Normal (TextureUnit 1)
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, call->material.normal.texture.id ? call->material.normal.texture.id : R3D.texture.normal);
+            if (locs[SHADER_LOC_MAP_NORMAL] != -1) {
+                int slot = 1;
+                rlSetUniform(locs[SHADER_LOC_MAP_NORMAL], &slot, RL_SHADER_UNIFORM_INT, 1);
+            }
+            
+            // Set Color Diffuse
+            if (locs[SHADER_LOC_COLOR_DIFFUSE] != -1) {
+                Vector4 color = {
+                    (float)call->material.albedo.color.r / 255.0f,
+                    (float)call->material.albedo.color.g / 255.0f,
+                    (float)call->material.albedo.color.b / 255.0f,
+                    (float)call->material.albedo.color.a / 255.0f
+                };
+                rlSetUniform(locs[SHADER_LOC_COLOR_DIFFUSE], &color, RL_SHADER_UNIFORM_VEC4, 1);
+            }
+        }
+
+        // Bone matrices upload for animations (instanced)
+        if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+            int boneLoc = rlGetLocationUniform(call->material.shader.id, "uBoneMatrices");
+            if (boneLoc != -1) {
+                rlSetUniformMatrices(boneLoc, call->geometry.model.mesh->boneMatrices, call->geometry.model.anim->boneCount);
+            }
+        }
+
+        // Applying material parameters that are independent of shaders
+        r3d_drawcall_apply_cull_mode(call->material.cullMode);
+        r3d_drawcall_apply_blend_mode(call->material.blendMode);
+
+        // Rendering the objects corresponding to the draw call
+        // 10 is locInstanceModel, 14 is locInstanceColor
+        r3d_drawcall_instanced(call, 10, 14);
+
+        // Reset state
+        rlDisableShader();
+        glActiveTexture(GL_TEXTURE0);
+
+        return;
+    }
 
     // Set additional matrix uniforms
     r3d_shader_set_mat4(raster.forwardInst, uMatModel, matModel);

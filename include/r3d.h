@@ -268,6 +268,8 @@ typedef struct R3D_Material {
 
     float alphaCutoff;          /**< Alpha threshold below which fragments are discarded. */
 
+    Shader shader;              /**< Custom shader to use for this material (overrides internal shaders). */
+
 } R3D_Material;
 
 /**
