@@ -1,0 +1,25 @@
+ビルド方法
+
+python3, cmake, MinGWを使えるようにする
+python3は pythonをダウンロードしている場合 この記事を参考にパス設定する https://qiita.com/celeron5576/items/5d288d844485ac6b692c
+cmakeは普通にインスコ (Windows x64) https://cmake.org/download/
+MinGWはこれの通りに　https://qiita.com/yomei_o/items/2e706a5fa3ac5ffc3a50　https://github.com/skeeto/w64devkit/releases
+
+依存しているサブモジュールをクローンする
+git submodule update --init --recursive
+
+
+ビルドディレクトリ作成
+mkdir build
+cd build
+
+
+MinGWの設定
+cmake .. -G "MinGW Makefiles" `
+    -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64-x86_64.cmake `
+    -DR3D_ASSIMP_VENDORED=ON `
+    -DR3D_RAYLIB_VENDORED=ON
+	
+	
+リリースでビルド
+cmake --build . --config Release
