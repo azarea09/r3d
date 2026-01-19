@@ -509,6 +509,11 @@ void r3d_shaders_load(void)
     r3d_shader_load_raster_depth_inst();
     r3d_shader_load_raster_depth_cube();
     r3d_shader_load_raster_depth_cube_inst();
+    r3d_shader_load_raster_outline();
+    r3d_shader_load_raster_outline_inst();
+
+
+
 
     /* --- Screen shader passes --- */
 
@@ -1386,7 +1391,63 @@ void r3d_shader_load_raster_depth_cube_inst(void)
     r3d_shader_get_location(raster.depthCubeInst, uAlphaCutoff);
 }
 
+void r3d_shader_load_raster_outline(void)
+{
+    R3D.shader.raster.outline.id = rlLoadShaderCode(OUTLINE_VERT, OUTLINE_FRAG);
+    
+    if (R3D.shader.raster.outline.id == 0) {
+        TraceLog(LOG_ERROR, "R3D_OUTLINE: Failed to compile outline shader");
+        return;
+    }
+    
+    // Get bone matrix locations
+    for (int i = 0; i < R3D_SHADER_MAX_BONES; i++) {
+        R3D.shader.raster.outline.uBoneMatrices[i].loc = rlGetLocationUniform(
+            R3D.shader.raster.outline.id, TextFormat("uBoneMatrices[%i]", i)
+        );
+    }
+    
+    // Get uniform locations
+    r3d_shader_get_location(raster.outline, uBoneCount);
+    r3d_shader_get_location(raster.outline, uModel);
+    r3d_shader_get_location(raster.outline, uView);
+    r3d_shader_get_location(raster.outline, uProjection);
+    r3d_shader_get_location(raster.outline, uOutlineWidth);
+    r3d_shader_get_location(raster.outline, uOutlineColor);
+    
+    TraceLog(LOG_INFO, "R3D_OUTLINE: Outline shader loaded successfully");
+}
+
+void r3d_shader_load_raster_outline_inst(void)
+{
+    R3D.shader.raster.outlineInst.id = rlLoadShaderCode(OUTLINE_INSTANCED_VERT, OUTLINE_FRAG);
+    
+    if (R3D.shader.raster.outlineInst.id == 0) {
+        TraceLog(LOG_ERROR, "R3D_OUTLINE: Failed to compile instanced outline shader");
+        return;
+    }
+    
+    // Get bone matrix locations
+    for (int i = 0; i < R3D_SHADER_MAX_BONES; i++) {
+        R3D.shader.raster.outlineInst.uBoneMatrices[i].loc = rlGetLocationUniform(
+            R3D.shader.raster.outlineInst.id, TextFormat("uBoneMatrices[%i]", i)
+        );
+    }
+    
+    // Get uniform locations
+    r3d_shader_get_location(raster.outlineInst, uBoneCount);
+    r3d_shader_get_location(raster.outlineInst, uModel);
+    r3d_shader_get_location(raster.outlineInst, uView);
+    r3d_shader_get_location(raster.outlineInst, uProjection);
+    r3d_shader_get_location(raster.outlineInst, uOutlineWidth);
+    r3d_shader_get_location(raster.outlineInst, uOutlineColor);
+    
+    TraceLog(LOG_INFO, "R3D_OUTLINE: Instanced outline shader loaded successfully");
+}
+
+
 void r3d_shader_load_screen_ssao(void)
+
 {
     R3D.shader.screen.ssao.id = rlLoadShaderCode(
         SCREEN_VERT, SSAO_FRAG

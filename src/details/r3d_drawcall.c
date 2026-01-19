@@ -98,7 +98,95 @@ bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call)
     return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->instanced.allAabb, &call->transform);
 }
 
+void r3d_drawcall_raster_outline(const r3d_drawcall_t* call)
+{
+    if (call->geometryType != R3D_DRAWCALL_GEOMETRY_MODEL || !call->outline.enabled) {
+        return;
+    }
+
+    r3d_shader_enable(raster.outline);
+
+    // Compute matrices
+    Matrix matModel = MatrixMultiply(call->transform, rlGetMatrixTransform());
+    
+    // Set shader uniforms
+    r3d_shader_set_mat4(raster.outline, uModel, matModel);
+    r3d_shader_set_mat4(raster.outline, uView, R3D.state.transform.view);
+    r3d_shader_set_mat4(raster.outline, uProjection, R3D.state.transform.proj);
+    
+    r3d_shader_set_float(raster.outline, uOutlineWidth, call->outline.width);
+    r3d_shader_set_col4(raster.outline, uOutlineColor, call->outline.color);
+
+    // Set skinning data if present
+    if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+        r3d_shader_set_mat4_v(raster.outline, uBoneMatrices[0], call->geometry.model.mesh->boneMatrices, call->geometry.model.anim->boneCount);
+        r3d_shader_set_int(raster.outline, uBoneCount, call->geometry.model.anim->boneCount);
+    }
+    else {
+        r3d_shader_set_int(raster.outline, uBoneCount, 0);
+    }
+
+    // Set up rendering state for outline (back-face culling inverted)
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    
+    // Render the geometry
+    r3d_drawcall(call);
+    
+    // Reset culling to default (back-face culling)
+    glCullFace(GL_BACK);
+    
+    r3d_shader_disable();
+}
+
+void r3d_drawcall_raster_outline_inst(const r3d_drawcall_t* call)
+{
+    if (call->geometryType != R3D_DRAWCALL_GEOMETRY_MODEL || !call->outline.enabled) {
+        return;
+    }
+
+    if (call->instanced.count == 0 || call->instanced.transforms == NULL) {
+        return;
+    }
+
+    r3d_shader_enable(raster.outlineInst);
+
+    // Compute matrices
+    Matrix matModel = MatrixMultiply(call->transform, rlGetMatrixTransform());
+    
+    // Set shader uniforms
+    r3d_shader_set_mat4(raster.outlineInst, uModel, matModel);
+    r3d_shader_set_mat4(raster.outlineInst, uView, R3D.state.transform.view);
+    r3d_shader_set_mat4(raster.outlineInst, uProjection, R3D.state.transform.proj);
+    
+    r3d_shader_set_float(raster.outlineInst, uOutlineWidth, call->outline.width);
+    r3d_shader_set_col4(raster.outlineInst, uOutlineColor, call->outline.color);
+
+    // Set skinning data if present
+    if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+        r3d_shader_set_mat4_v(raster.outlineInst, uBoneMatrices[0], call->geometry.model.mesh->boneMatrices, call->geometry.model.anim->boneCount);
+        r3d_shader_set_int(raster.outlineInst, uBoneCount, call->geometry.model.anim->boneCount);
+    }
+    else {
+        r3d_shader_set_int(raster.outlineInst, uBoneCount, 0);
+    }
+
+    // Set up rendering state for outline
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    
+    // Render the geometry instanced
+    r3d_drawcall_instanced(call, 7, -1); // 7 is layout location for instance transform in outline shader
+    
+    // Reset culling to default
+    glCullFace(GL_BACK);
+    
+    r3d_shader_disable();
+}
+
 void r3d_drawcall_update_model_animation(const r3d_drawcall_t* call)
+
+
 {
     int frame = call->geometry.model.frame;
     if (frame >= call->geometry.model.anim->frameCount) {

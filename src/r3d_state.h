@@ -175,7 +175,11 @@ extern struct R3D_State {
             r3d_shader_raster_depth_inst_t depthInst;
             r3d_shader_raster_depth_cube_t depthCube;
             r3d_shader_raster_depth_cube_inst_t depthCubeInst;
+            r3d_shader_raster_outline_t outline;
+            r3d_shader_raster_outline_t outlineInst;
         } raster;
+
+
 
         // Screen shaders
         struct {
@@ -353,7 +357,11 @@ void r3d_shader_load_raster_depth(void);
 void r3d_shader_load_raster_depth_inst(void);
 void r3d_shader_load_raster_depth_cube(void);
 void r3d_shader_load_raster_depth_cube_inst(void);
+void r3d_shader_load_raster_outline(void);
+void r3d_shader_load_raster_outline_inst(void);
 void r3d_shader_load_screen_ssao(void);
+
+
 void r3d_shader_load_screen_ambient_ibl(void);
 void r3d_shader_load_screen_ambient(void);
 void r3d_shader_load_screen_lighting(void);

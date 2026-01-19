@@ -428,4 +428,16 @@ typedef struct {
     r3d_shader_uniform_vec2_t uTexelSize;
 } r3d_shader_screen_fxaa_t;
 
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_mat4_t uBoneMatrices[R3D_SHADER_MAX_BONES];
+    r3d_shader_uniform_int_t uBoneCount;
+    r3d_shader_uniform_mat4_t uModel;
+    r3d_shader_uniform_mat4_t uView;
+    r3d_shader_uniform_mat4_t uProjection;
+    r3d_shader_uniform_float_t uOutlineWidth;
+    r3d_shader_uniform_vec4_t uOutlineColor;
+} r3d_shader_raster_outline_t;
+
 #endif // R3D_EMBEDDED_SHADERS_H
+

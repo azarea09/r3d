@@ -71,7 +71,14 @@ typedef struct {
         size_t count;
     } instanced;
 
+    struct {
+        bool enabled;
+        float width;
+        Color color;
+    } outline;
+
 } r3d_drawcall_t;
+
 
 /* === Functions === */
 
@@ -96,4 +103,8 @@ void r3d_drawcall_raster_geometry_inst(const r3d_drawcall_t* call);
 void r3d_drawcall_raster_forward(const r3d_drawcall_t* call);
 void r3d_drawcall_raster_forward_inst(const r3d_drawcall_t* call);
 
+void r3d_drawcall_raster_outline(const r3d_drawcall_t* call);
+void r3d_drawcall_raster_outline_inst(const r3d_drawcall_t* call);
+
 #endif // R3D_DETAILS_DRAWCALL_H
+

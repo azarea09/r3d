@@ -1208,6 +1208,32 @@ R3DAPI void R3D_UnloadModel(const R3D_Model* model, bool unloadMaterials);
 R3DAPI void R3D_UpdateModelBoundingBox(R3D_Model* model, bool updateMeshBoundingBoxes);
 
 /**
+ * @brief Enables or disables outline rendering for a specific model.
+ * 
+ * This function controls whether the model should be rendered with an outline effect.
+ * The outline is rendered using vertex extrusion technique, which maintains consistent
+ * width regardless of camera distance or viewing angle. The outline correctly handles
+ * separated mesh parts (e.g., detached arms from torso) and works with alpha-blended materials.
+ * 
+ * @param model A pointer to the model.
+ * @param enabled True to enable the outline, false to disable it.
+ */
+R3DAPI void R3D_SetUseOutline(const R3D_Model* model, bool enabled);
+
+/**
+ * @brief Sets the properties of the outline for a specific model.
+ * 
+ * This function configures the visual properties of the outline effect.
+ * The width is specified in world units and remains constant regardless of camera distance.
+ * The outline is rendered as a solid color using the vertex extrusion technique.
+ * 
+ * @param model A pointer to the model.
+ * @param width The width of the outline in world units. Recommended range: 0.01 to 0.1.
+ * @param color The solid color of the outline.
+ */
+R3DAPI void R3D_SetOutlineProp(const R3D_Model* model, float width, Color color);
+
+/**
  * @brief Loads model animations from a supported file format (e.g., GLTF, IQM).
  *
  * This function parses animation data from the given model file and returns an array

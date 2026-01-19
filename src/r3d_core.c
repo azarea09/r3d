@@ -33,6 +33,7 @@
 #include "./details/r3d_drawcall.h"
 #include "./details/r3d_billboard.h"
 #include "./details/r3d_primitives.h"
+#include "./details/r3d_outline.h"
 #include "./details/containers/r3d_array.h"
 #include "./details/containers/r3d_registry.h"
 
@@ -69,6 +70,8 @@ static void r3d_pass_scene_background(void);
 static void r3d_pass_scene_deferred(void);
 static void r3d_pass_scene_forward_depth_prepass(void);
 static void r3d_pass_scene_forward(void);
+static void r3d_pass_scene_outlines(void);
+
 
 static void r3d_pass_post_setup(void);
 static void r3d_pass_post_bloom(void);
@@ -165,12 +168,20 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     r3d_textures_load();
     r3d_shaders_load();
 
+    // Initialize outline system
+    r3d_outline_init();
+
     // Defines suitable clipping plane distances for r3d
     rlSetClipPlanes(0.05f, 4000.0f);
+
+
 }
 
 void R3D_Close(void)
 {
+    // Shutdown outline system
+    r3d_outline_shutdown();
+
     aiReleasePropertyStore(R3D.state.loading.aiProps);
 
     r3d_framebuffers_unload();
@@ -189,6 +200,7 @@ void R3D_Close(void)
     r3d_primitive_unload(&R3D.primitive.quad);
     r3d_primitive_unload(&R3D.primitive.cube);
 }
+
 
 bool R3D_HasState(unsigned int flag)
 {
@@ -388,7 +400,10 @@ void R3D_End(void)
         r3d_pass_scene_forward();
     }
 
+    r3d_pass_scene_outlines();
+
     /* --- Applying effects over the scene and final blit --- */
+
 
     r3d_pass_post_setup();
 
@@ -521,8 +536,16 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
         const R3D_Mesh* mesh = &model->meshes[i];
 
         r3d_drawcall_t drawCall = { 0 };
+        
+        R3D_OutlineConfig outlineConfig = { 0 };
+        if (r3d_outline_get_config(model, &outlineConfig)) {
+            drawCall.outline.enabled = outlineConfig.enabled;
+            drawCall.outline.width = outlineConfig.width;
+            drawCall.outline.color = outlineConfig.color;
+        }
 
         if (mesh == NULL) return;
+
 
         switch (material->billboardMode) {
         case R3D_BILLBOARD_FRONT:
@@ -598,7 +621,15 @@ void R3D_DrawModelInstancedPro(const R3D_Model* model,
 
         r3d_drawcall_t drawCall = { 0 };
 
+        R3D_OutlineConfig outlineConfig = { 0 };
+        if (r3d_outline_get_config(model, &outlineConfig)) {
+            drawCall.outline.enabled = outlineConfig.enabled;
+            drawCall.outline.width = outlineConfig.width;
+            drawCall.outline.color = outlineConfig.color;
+        }
+
         drawCall.transform = globalTransform;
+
         drawCall.material = *material;
         drawCall.geometry.model.mesh = mesh;
         drawCall.geometryType = R3D_DRAWCALL_GEOMETRY_MODEL;
@@ -2067,7 +2098,95 @@ void r3d_pass_scene_forward(void)
     }
 }
 
+static void r3d_pass_scene_outlines(void)
+{
+    // Search for at least one enabled outline
+    bool hasOutlines = false;
+    
+    for (int i = 0; i < R3D.container.aDrawDeferred.count; i++) {
+        r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferred, i);
+        if (call->outline.enabled) {
+            hasOutlines = true; break;
+        }
+    }
+    if (!hasOutlines) {
+        for (int i = 0; i < R3D.container.aDrawDeferredInst.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferredInst, i);
+            if (call->outline.enabled) {
+                hasOutlines = true; break;
+            }
+        }
+    }
+    if (!hasOutlines) {
+        for (int i = 0; i < R3D.container.aDrawForward.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForward, i);
+            if (call->outline.enabled) {
+                hasOutlines = true; break;
+            }
+        }
+    }
+    if (!hasOutlines) {
+        for (int i = 0; i < R3D.container.aDrawForwardInst.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForwardInst, i);
+            if (call->outline.enabled) {
+                hasOutlines = true; break;
+            }
+        }
+    }
+
+    if (!hasOutlines) return;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.pingPong.id);
+    {
+        glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_BLEND);
+
+        // Setup matrices
+        rlMatrixMode(RL_PROJECTION);
+        rlPushMatrix();
+        rlSetMatrixProjection(R3D.state.transform.proj);
+
+        rlMatrixMode(RL_MODELVIEW);
+        rlLoadIdentity();
+        rlMultMatrixf(MatrixToFloat(R3D.state.transform.view));
+
+        // Draw outlines for deferred objects
+        for (int i = 0; i < R3D.container.aDrawDeferred.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferred, i);
+            if (call->outline.enabled) r3d_drawcall_raster_outline(call);
+        }
+
+        // Draw outlines for deferred instanced objects
+        for (int i = 0; i < R3D.container.aDrawDeferredInst.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferredInst, i);
+            if (call->outline.enabled) r3d_drawcall_raster_outline_inst(call);
+        }
+
+        // Draw outlines for forward objects
+        for (int i = 0; i < R3D.container.aDrawForward.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForward, i);
+            if (call->outline.enabled) r3d_drawcall_raster_outline(call);
+        }
+
+        // Draw outlines for forward instanced objects
+        for (int i = 0; i < R3D.container.aDrawForwardInst.count; i++) {
+            r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForwardInst, i);
+            if (call->outline.enabled) r3d_drawcall_raster_outline_inst(call);
+        }
+
+        rlMatrixMode(RL_PROJECTION);
+        rlPopMatrix();
+        
+        rlMatrixMode(RL_MODELVIEW);
+        rlLoadIdentity();
+    }
+}
+
 void r3d_pass_post_setup(void)
+
 {
     glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);

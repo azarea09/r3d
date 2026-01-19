@@ -3527,3 +3527,45 @@ void R3D_SetModelImportScale(float value)
 {
     aiSetImportPropertyFloat(R3D.state.loading.aiProps, AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, value);
 }
+
+/* === Outline API Implementation === */
+
+#include "./details/r3d_outline.h"
+
+void R3D_SetUseOutline(const R3D_Model* model, bool enabled)
+{
+    if (!model) {
+        TraceLog(LOG_WARNING, "R3D_OUTLINE: Cannot set outline for NULL model");
+        return;
+    }
+    
+    R3D_OutlineConfig config = { 0 };
+    
+    // Get existing config or use defaults
+    if (!r3d_outline_get_config(model, &config)) {
+        config.width = 0.05f;  // Default width
+        config.color = BLACK;  // Default color
+    }
+    
+    config.enabled = enabled;
+    r3d_outline_set_config(model, config);
+}
+
+void R3D_SetOutlineProp(const R3D_Model* model, float width, Color color)
+{
+    if (!model) {
+        TraceLog(LOG_WARNING, "R3D_OUTLINE: Cannot set outline properties for NULL model");
+        return;
+    }
+    
+    R3D_OutlineConfig config = { 0 };
+    
+    // Get existing config or use defaults
+    if (!r3d_outline_get_config(model, &config)) {
+        config.enabled = false;  // Default disabled
+    }
+    
+    config.width = width;
+    config.color = color;
+    r3d_outline_set_config(model, config);
+}
