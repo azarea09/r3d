@@ -31,6 +31,9 @@ uniform float uOutlineWidth;
 uniform mat4 uBoneMatrices[128];
 uniform int uBoneCount;
 
+const vec3 EXCLUDE_COLOR = vec3(1.0, 0.0, 1.0);
+const float COLOR_THRESHOLD = 1.0;
+
 void main() {
     vec4 worldPos;
     vec3 worldNormal;
@@ -66,7 +69,8 @@ void main() {
     
     // Extrude vertex along view-space normal
     // This ensures constant outline width regardless of distance
-    viewPos.xyz += viewNormal * uOutlineWidth;
+    float shouldOutline = distance(aColor.rgb, EXCLUDE_COLOR) >= COLOR_THRESHOLD ? 1.0 : 0.0;
+    viewPos.xyz += viewNormal * uOutlineWidth * shouldOutline;
     
     // Project to clip space
     gl_Position = uProjection * viewPos;
