@@ -1234,6 +1234,7 @@ R3DAPI void R3D_SetUseOutline(const R3D_Model* model, bool enabled);
  * @param color The solid color of the outline.
  */
 R3DAPI void R3D_SetOutlineProp(const R3D_Model* model, float width, Color color);
+R3DAPI void R3D_AddOutlineIgnoreMeshIndex(const R3D_Model* model, int meshIndex);
 
 /**
  * @brief Loads model animations from a supported file format (e.g., GLTF, IQM).

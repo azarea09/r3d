@@ -3542,7 +3542,7 @@ void R3D_SetUseOutline(const R3D_Model* model, bool enabled)
     R3D_OutlineConfig config = { 0 };
     
     // Get existing config or use defaults
-    if (!r3d_outline_get_config(model, &config)) {
+    if (!r3d_outline_get_config(model, &config, NULL)) {
         config.width = 0.05f;  // Default width
         config.color = BLACK;  // Default color
     }
@@ -3561,11 +3561,21 @@ void R3D_SetOutlineProp(const R3D_Model* model, float width, Color color)
     R3D_OutlineConfig config = { 0 };
     
     // Get existing config or use defaults
-    if (!r3d_outline_get_config(model, &config)) {
-        config.enabled = false;  // Default disabled
+    if (!r3d_outline_get_config(model, &config, NULL)) {
+        config.enabled = false;      // Default disabled
     }
     
     config.width = width;
     config.color = color;
     r3d_outline_set_config(model, config);
+}
+
+void R3D_AddOutlineIgnoreMeshIndex(const R3D_Model* model, int meshIndex)
+{
+    if (!model) {
+        TraceLog(LOG_WARNING, "R3D_OUTLINE: Cannot add ignore mesh index for NULL model");
+        return;
+    }
+
+    r3d_outline_add_ignore_index(model, meshIndex);
 }

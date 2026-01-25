@@ -29,6 +29,7 @@
 typedef struct R3D_OutlineEntry {
     const R3D_Model* model;
     R3D_OutlineConfig config;
+    unsigned char* ignoredMeshes;
 } R3D_OutlineEntry;
 
 static struct {
@@ -89,6 +90,11 @@ void r3d_outline_shutdown(void) {
     }
     
     if (g_outlineData.entries) {
+        for (int i = 0; i < g_outlineData.count; i++) {
+            if (g_outlineData.entries[i].ignoredMeshes) {
+                RL_FREE(g_outlineData.entries[i].ignoredMeshes);
+            }
+        }
         RL_FREE(g_outlineData.entries);
         g_outlineData.entries = NULL;
     }
@@ -123,11 +129,12 @@ void r3d_outline_set_config(const R3D_Model* model, R3D_OutlineConfig config) {
         
         g_outlineData.entries[g_outlineData.count].model = model;
         g_outlineData.entries[g_outlineData.count].config = config;
+        g_outlineData.entries[g_outlineData.count].ignoredMeshes = NULL;
         g_outlineData.count++;
     }
 }
 
-bool r3d_outline_get_config(const R3D_Model* model, R3D_OutlineConfig* outConfig) {
+bool r3d_outline_get_config(const R3D_Model* model, R3D_OutlineConfig* outConfig, const unsigned char** outIgnoredMeshes) {
     if (!g_outlineData.initialized || !model || !outConfig) {
         return false;
     }
@@ -136,10 +143,42 @@ bool r3d_outline_get_config(const R3D_Model* model, R3D_OutlineConfig* outConfig
     
     if (index >= 0) {
         *outConfig = g_outlineData.entries[index].config;
+        if (outIgnoredMeshes) {
+            *outIgnoredMeshes = g_outlineData.entries[index].ignoredMeshes;
+        }
         return true;
     }
     
     return false;
+}
+
+void r3d_outline_add_ignore_index(const R3D_Model* model, int meshIndex) {
+    if (!g_outlineData.initialized) {
+        r3d_outline_init();
+    }
+
+    if (!model || meshIndex < 0 || meshIndex >= model->meshCount) {
+        TraceLog(LOG_WARNING, "R3D_OUTLINE: Ignore index %d out of bounds (meshCount: %d)", meshIndex, model ? model->meshCount : 0);
+        return;
+    }
+
+    int index = r3d_outline_find_index(model);
+
+    if (index < 0) {
+        // Create entry with default config if it doesn't exist
+        R3D_OutlineConfig defaultConfig = { false, 0.05f, BLACK };
+        r3d_outline_set_config(model, defaultConfig);
+        index = r3d_outline_find_index(model);
+    }
+
+    if (index >= 0) {
+        if (!g_outlineData.entries[index].ignoredMeshes) {
+            g_outlineData.entries[index].ignoredMeshes = (unsigned char*)RL_CALLOC(model->meshCount, sizeof(unsigned char));
+        }
+        if (g_outlineData.entries[index].ignoredMeshes) {
+            g_outlineData.entries[index].ignoredMeshes[meshIndex] = 1;
+        }
+    }
 }
 
 void r3d_outline_remove_config(const R3D_Model* model) {
@@ -150,6 +189,9 @@ void r3d_outline_remove_config(const R3D_Model* model) {
     int index = r3d_outline_find_index(model);
     
     if (index >= 0) {
+        if (g_outlineData.entries[index].ignoredMeshes) {
+            RL_FREE(g_outlineData.entries[index].ignoredMeshes);
+        }
         // Remove entry by shifting remaining entries
         for (int i = index; i < g_outlineData.count - 1; i++) {
             g_outlineData.entries[i] = g_outlineData.entries[i + 1];

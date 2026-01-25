@@ -54,9 +54,17 @@ void r3d_outline_set_config(const R3D_Model* model, R3D_OutlineConfig config);
  * @brief Get outline configuration for a model
  * @param model Pointer to the model
  * @param outConfig Pointer to store the configuration
+ * @param outIgnoredMeshes Pointer to a byte array representing ignored meshes (can be NULL)
  * @return true if configuration exists, false otherwise
  */
-bool r3d_outline_get_config(const R3D_Model* model, R3D_OutlineConfig* outConfig);
+bool r3d_outline_get_config(const R3D_Model* model, R3D_OutlineConfig* outConfig, const unsigned char** outIgnoredMeshes);
+
+/**
+ * @brief Add a mesh index to the ignore list for a model
+ * @param model Pointer to the model
+ * @param meshIndex Index of the mesh to ignore
+ */
+void r3d_outline_add_ignore_index(const R3D_Model* model, int meshIndex);
 
 /**
  * @brief Remove outline configuration for a model

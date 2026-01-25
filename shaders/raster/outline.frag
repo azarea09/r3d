@@ -27,7 +27,7 @@ void main() {
     
     if (vShouldOutline > 0.5) {
         // Outline color with texture alpha
-        FragColor = vec4(srgb_to_linear(uOutlineColor.rgb), texColor.a * uOutlineColor.a);
+        FragColor = vec4(srgb_to_linear(uOutlineColor.rgb), texColor.a);
     } else {
         // Normal texture color (for backfaces of excluded/transparent areas)
         FragColor = vec4(srgb_to_linear(texColor.rgb), texColor.a);

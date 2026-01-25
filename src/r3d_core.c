@@ -538,27 +538,28 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
         r3d_drawcall_t drawCall = { 0 };
         
         R3D_OutlineConfig outlineConfig = { 0 };
-        if (r3d_outline_get_config(model, &outlineConfig)) {
-            drawCall.outline.enabled = outlineConfig.enabled;
+        const unsigned char* ignoredMeshes = NULL;
+        if (r3d_outline_get_config(model, &outlineConfig, &ignoredMeshes)) {
+            drawCall.outline.enabled = outlineConfig.enabled && (!ignoredMeshes || !ignoredMeshes[i]);
             drawCall.outline.width = outlineConfig.width;
             drawCall.outline.color = outlineConfig.color;
         }
 
-        if (mesh == NULL) return;
+        if (mesh == NULL) continue;
 
-
+        Matrix meshTransform = transform;
         switch (material->billboardMode) {
         case R3D_BILLBOARD_FRONT:
-            r3d_transform_to_billboard_front(&transform, &R3D.state.transform.invView);
+            r3d_transform_to_billboard_front(&meshTransform, &R3D.state.transform.invView);
             break;
         case R3D_BILLBOARD_Y_AXIS:
-            r3d_transform_to_billboard_y(&transform, &R3D.state.transform.invView);
+            r3d_transform_to_billboard_y(&meshTransform, &R3D.state.transform.invView);
             break;
         default:
             break;
         }
 
-        drawCall.transform = transform;
+        drawCall.transform = meshTransform;
         drawCall.material = material ? *material : R3D_GetDefaultMaterial();
         drawCall.geometry.model.mesh = mesh;
         drawCall.geometryType = R3D_DRAWCALL_GEOMETRY_MODEL;
@@ -622,8 +623,9 @@ void R3D_DrawModelInstancedPro(const R3D_Model* model,
         r3d_drawcall_t drawCall = { 0 };
 
         R3D_OutlineConfig outlineConfig = { 0 };
-        if (r3d_outline_get_config(model, &outlineConfig)) {
-            drawCall.outline.enabled = outlineConfig.enabled;
+        const unsigned char* ignoredMeshes = NULL;
+        if (r3d_outline_get_config(model, &outlineConfig, &ignoredMeshes)) {
+            drawCall.outline.enabled = outlineConfig.enabled && (!ignoredMeshes || !ignoredMeshes[i]);
             drawCall.outline.width = outlineConfig.width;
             drawCall.outline.color = outlineConfig.color;
         }
