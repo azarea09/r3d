@@ -2139,8 +2139,9 @@ static void r3d_pass_scene_outlines(void)
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.pingPong.id);
     {
         glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
+        r3d_depth_stencil_attach();
         glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
+        glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
         glDisable(GL_BLEND);
 

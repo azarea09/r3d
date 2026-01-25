@@ -70,7 +70,7 @@ void main() {
     // Extrude vertex along view-space normal
     // This ensures constant outline width regardless of distance
     float shouldOutline = distance(aColor.rgb, EXCLUDE_COLOR) >= COLOR_THRESHOLD ? 1.0 : 0.0;
-    viewPos.xyz += viewNormal * uOutlineWidth * shouldOutline;
+    viewPos.xyz += viewNormal * uOutlineWidth * (-viewPos.z) * shouldOutline;
     
     // Project to clip space
     gl_Position = uProjection * viewPos;
