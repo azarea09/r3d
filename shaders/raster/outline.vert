@@ -30,6 +30,9 @@ uniform int uBoneCount;
 const vec3 EXCLUDE_COLOR = vec3(1.0, 0.0, 1.0);
 const float COLOR_THRESHOLD = 1.0;
 
+out vec2 vTexCoord;
+out float vShouldOutline;
+
 void main() {
     vec4 worldPos;
     vec3 worldNormal;
@@ -64,6 +67,9 @@ void main() {
     // This ensures constant outline width regardless of distance
     float shouldOutline = distance(aColor.rgb, EXCLUDE_COLOR) >= COLOR_THRESHOLD ? 1.0 : 0.0;
     viewPos.xyz += viewNormal * uOutlineWidth * (-viewPos.z) * shouldOutline;
+    
+    vTexCoord = aTexCoord;
+    vShouldOutline = shouldOutline;
     
     // Project to clip space
     gl_Position = uProjection * viewPos;

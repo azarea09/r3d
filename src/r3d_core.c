@@ -2143,7 +2143,8 @@ static void r3d_pass_scene_outlines(void)
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        glDisable(GL_BLEND);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // Setup matrices
         rlMatrixMode(RL_PROJECTION);

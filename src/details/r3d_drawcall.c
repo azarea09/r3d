@@ -117,6 +117,9 @@ void r3d_drawcall_raster_outline(const r3d_drawcall_t* call)
     r3d_shader_set_float(raster.outline, uOutlineWidth, call->outline.width);
     r3d_shader_set_col4(raster.outline, uOutlineColor, call->outline.color);
 
+    // Bind albedo texture for transparency support
+    r3d_shader_bind_sampler2D_opt(raster.outline, uTexAlbedo, call->material.albedo.texture.id, white);
+
     // Set skinning data if present
     if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
         r3d_shader_set_mat4_v(raster.outline, uBoneMatrices[0], call->geometry.model.mesh->boneMatrices, call->geometry.model.anim->boneCount);
@@ -136,6 +139,9 @@ void r3d_drawcall_raster_outline(const r3d_drawcall_t* call)
     // Reset culling to default (back-face culling)
     glCullFace(GL_BACK);
     
+    // Unbind sampler
+    r3d_shader_unbind_sampler2D(raster.outline, uTexAlbedo);
+
     r3d_shader_disable();
 }
 
@@ -162,6 +168,9 @@ void r3d_drawcall_raster_outline_inst(const r3d_drawcall_t* call)
     r3d_shader_set_float(raster.outlineInst, uOutlineWidth, call->outline.width);
     r3d_shader_set_col4(raster.outlineInst, uOutlineColor, call->outline.color);
 
+    // Bind albedo texture for transparency support
+    r3d_shader_bind_sampler2D_opt(raster.outlineInst, uTexAlbedo, call->material.albedo.texture.id, white);
+
     // Set skinning data if present
     if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
         r3d_shader_set_mat4_v(raster.outlineInst, uBoneMatrices[0], call->geometry.model.mesh->boneMatrices, call->geometry.model.anim->boneCount);
@@ -181,6 +190,9 @@ void r3d_drawcall_raster_outline_inst(const r3d_drawcall_t* call)
     // Reset culling to default
     glCullFace(GL_BACK);
     
+    // Unbind sampler
+    r3d_shader_unbind_sampler2D(raster.outlineInst, uTexAlbedo);
+
     r3d_shader_disable();
 }
 

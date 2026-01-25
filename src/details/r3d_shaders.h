@@ -437,6 +437,7 @@ typedef struct {
     r3d_shader_uniform_mat4_t uProjection;
     r3d_shader_uniform_float_t uOutlineWidth;
     r3d_shader_uniform_vec4_t uOutlineColor;
+    r3d_shader_uniform_sampler2D_t uTexAlbedo;
 } r3d_shader_raster_outline_t;
 
 #endif // R3D_EMBEDDED_SHADERS_H

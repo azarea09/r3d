@@ -1414,6 +1414,11 @@ void r3d_shader_load_raster_outline(void)
     r3d_shader_get_location(raster.outline, uProjection);
     r3d_shader_get_location(raster.outline, uOutlineWidth);
     r3d_shader_get_location(raster.outline, uOutlineColor);
+    r3d_shader_get_location(raster.outline, uTexAlbedo);
+    
+    r3d_shader_enable(raster.outline);
+    r3d_shader_set_sampler2D_slot(raster.outline, uTexAlbedo, 0);
+    r3d_shader_disable();
     
     TraceLog(LOG_INFO, "R3D_OUTLINE: Outline shader loaded successfully");
 }
@@ -1441,6 +1446,11 @@ void r3d_shader_load_raster_outline_inst(void)
     r3d_shader_get_location(raster.outlineInst, uProjection);
     r3d_shader_get_location(raster.outlineInst, uOutlineWidth);
     r3d_shader_get_location(raster.outlineInst, uOutlineColor);
+    r3d_shader_get_location(raster.outlineInst, uTexAlbedo);
+    
+    r3d_shader_enable(raster.outlineInst);
+    r3d_shader_set_sampler2D_slot(raster.outlineInst, uTexAlbedo, 0);
+    r3d_shader_disable();
     
     TraceLog(LOG_INFO, "R3D_OUTLINE: Instanced outline shader loaded successfully");
 }
